@@ -456,6 +456,10 @@
   </style>
 </head>
 <body>
+    <audio id="soundType" src="typesound.mp3" preload="auto"></audio>
+    <audio id="soundPaper" src="papersound.mp3" preload="auto"></audio>
+    <audio id="soundButton" src="papersound.mp3" preload="auto"></audio>
+
   <div class="spine"></div>
 
   <div class="folder">
@@ -504,7 +508,7 @@
 <span class="field-line" style="min-width:300px;"></span>
 
 <!-- Документ составлен квартирмейстером: <span class="field-line" style="min-width:180px;"></span> -->
-Подпись офицера, утвердившего личное дело:
+Подпись офицера, утвердившего личное дело: []
 <span class="field-line" style="min-width:260px;"></span>
 
 Дата утверждения:
@@ -544,7 +548,7 @@
 
 Награды и поощрения:
  — Медали: Печать Чистоты, "Простой Орёл", Серебрянный Череп, "Окопный Штурмовик"<span class="field-line" style="min-width:120px;"></span>
- — Грамоты: Мунисторума, РПКшера, Знаменосца, за отбитие Томской Михайловской рощи, Модробоя<span class="field-line" style="min-width:120px;"></span>
+ <!-- — Грамоты: Мунисторума, РПКшера, Знаменосца, за отбитие Томской Михайловской рощи, Модробоя<span class="field-line" style="min-width:120px;"></span> -->
 
 Взыскания и дисциплинарные меры:
 [1]  Дата: 30.10.М41
@@ -734,6 +738,26 @@
   </div>
 
     <script>
+
+     // ======== ЗВУКИ ========
+    const soundType = document.getElementById("soundType");
+    const soundPaper = document.getElementById("soundPaper");
+    const soundButton = document.getElementById("soundButton");
+
+    // глобальный флаг "можно ли вообще играть звук" (см. ниже)
+    let soundEnabled = false;
+    window.addEventListener("click", () => {
+        soundEnabled = true;
+        }, { once: true });
+
+    function playSound(audio, volume = 0.12) {
+    if (!soundEnabled) return; // пока браузер не дал добро — тишина
+
+    const clone = audio.cloneNode();
+    clone.volume = volume; // делай 0.05–0.2 по вкусу
+    clone.play().catch(() => {});
+    }
+    
     // ===== ПОСТРАНИЧНЫЙ ВЫВОД С РАЗБИВКОЙ ПО АБЗАЦАМ + ПРОГРЕСС =====
 
     const tabs = document.querySelectorAll(".tab-label");
@@ -742,7 +766,7 @@
     const pageNext = document.getElementById("pageNext");
     const pageIndicator = document.getElementById("pageIndicator");
 
-    const typeSpeed = 0.1;     // скорость печати
+    const typeSpeed = 10;     // скорость печати
     const typeJitter = 25;    // небольшой рандом
     const pageSize = 700;     // целевой размер "страницы" в символах
 
@@ -919,9 +943,17 @@
         tw.textContent = currentPageText.slice(0, currentCharIndex);
         currentCharIndex++;
 
+        // символ, который только что "напечатали"
+        const ch = currentPageText[currentCharIndex - 1];
+
+        // играем звук только иногда и только для "осмысленных" символов
+        if (ch && ch !== ' ' && ch !== '\n' && currentCharIndex % 3 === 0) {
+        playSound(soundType, 0.06); // очень тихий стук клавиши
+        }
+
         const delay = typeSpeed + Math.random() * typeJitter;
         typingTimer = setTimeout(step, delay);
-        }
+        }   
 
         step();
     }
@@ -1041,6 +1073,7 @@
     // Вкладки
     tabs.forEach(tab => {
         tab.addEventListener("click", () => {
+            playSound(soundButton);
         const targetId = tab.dataset.section;
 
         tabs.forEach(t => t.classList.remove("active"));
@@ -1052,6 +1085,7 @@
 
     // "НАЗАД"
     pagePrev.addEventListener("click", () => {
+        playSound(soundPaper);
         const activeSection = document.querySelector(".section-content.active");
         if (!activeSection) return;
 
@@ -1066,6 +1100,7 @@
 
     // "ДАЛЕЕ"
     pageNext.addEventListener("click", () => {
+        playSound(soundPaper);
         const activeSection = document.querySelector(".section-content.active");
         if (!activeSection) return;
 
