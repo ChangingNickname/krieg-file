@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Терминал Муниторум</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: radial-gradient(circle at top, #151e15 0%, #020303 55%, #000 100%);
+      color: #9fef00;
+      font-family: "Share Tech Mono", Consolas, "Courier New", monospace;
+      overflow: hidden;
+    }
+
+    /* Общий эффект старого монитора */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        repeating-linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0.4) 0px,
+          rgba(0, 0, 0, 0.4) 1px,
+          transparent 2px,
+          transparent 3px
+        );
+      opacity: 0.35;
+      mix-blend-mode: soft-light;
+      z-index: 0;
+    }
+
+    /* Лёгкая виньетка по краям, как у экрана */
+    .vignette {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      box-shadow:
+        inset 0 0 100px 40px rgba(0, 0, 0, 0.95),
+        inset 0 0 220px 80px rgba(0, 0, 0, 0.9);
+    }
+
+    .scanline {
+      position: fixed;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(
+        to bottom,
+        rgba(159, 239, 0, 0),
+        rgba(159, 239, 0, 0.6),
+        rgba(159, 239, 0, 0)
+      );
+      animation: scan 4s linear infinite;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    @keyframes scan {
+      0%   { top: -2px; }
+      100% { top: 100%; }
+    }
+
+    /* === HUD-ОБОЛОЧКА ВОКРУГ ВСЕГО ЭКРАНА === */
+    .hud-frame {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      padding: 32px 40px 32px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* Верхняя панель HUD */
+    .hud-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: #b8ff87;
+      border-bottom: 1px solid #2f3f2f;
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+    }
+
+    .hud-top-left span:first-child {
+      font-weight: bold;
+    }
+
+    .hud-top-right {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .hud-small-label {
+      font-size: 0.65rem;
+      opacity: 0.85;
+    }
+
+    .hud-led {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #a5ff6a 0%, #4a7b36 70%, #122109 100%);
+      box-shadow: 0 0 8px #a5ff6a;
+    }
+
+    /* Нижняя панель HUD */
+    .hud-bottom {
+      border-top: 1px solid #2f3f2f;
+      padding-top: 6px;
+      margin-top: 10px;
+      font-size: 0.68rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #75c74c;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .hud-progress-bar {
+      flex: 1;
+      height: 4px;
+      margin: 0 14px;
+      background: #0b120b;
+      border: 1px solid #2a3c2a;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hud-progress-bar::before {
+      content: "";
+      position: absolute;
+      left: -40%;
+      top: 0;
+      width: 35%;
+      height: 100%;
+      background: linear-gradient(
+        to right,
+        rgba(159, 239, 0, 0),
+        rgba(159, 239, 0, 0.8),
+        rgba(159, 239, 0, 0)
+      );
+      animation: sweep 2.2s linear infinite;
+    }
+
+    @keyframes sweep {
+      0%   { left: -40%; }
+      100% { left: 110%; }
+    }
+
+    /* Боковые технические отметки HUD */
+    .hud-side-mark {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 50%;
+      width: 18px;
+      border-top: 1px solid #2f3f2f;
+      border-bottom: 1px solid #2f3f2f;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 0.55rem;
+      text-align: center;
+      color: #4e7a3d;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .hud-side-mark.left { left: 12px; }
+    .hud-side-mark.right { right: 12px; }
+
+    .hud-side-tick {
+      flex: 1;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(60, 86, 60, 0.3) 0px,
+        rgba(60, 86, 60, 0.3) 1px,
+        transparent 4px,
+        transparent 8px
+      );
+      opacity: 0.65;
+      margin: 4px 5px;
+    }
+
+    .hud-corner {
+      position: fixed;
+      width: 34px;
+      height: 34px;
+      border: 1px solid #395539;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .hud-corner.tl { top: 12px; left: 12px; border-right: none; border-bottom: none; }
+    .hud-corner.tr { top: 12px; right: 12px; border-left: none; border-bottom: none; }
+    .hud-corner.bl { bottom: 12px; left: 12px; border-right: none; border-top: none; }
+    .hud-corner.br { bottom: 12px; right: 12px; border-left: none; border-top: none; }
+
+    /* === ВНУТРЕННЕЕ "ОКНО-ТЕРМИНАЛ" === */
+    #terminal-frame {
+      position: relative;
+      margin: auto;
+      max-width: 960px;
+      width: 100%;
+      box-shadow:
+        0 0 0 2px #1a2b1a,
+        0 0 0 4px #546b46,
+        0 0 28px #000;
+      background: #050705;
+      border-radius: 4px;
+    }
+
+    .frame-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      border-bottom: 1px solid #1a351a;
+      background: linear-gradient(to right, #071107, #121b10);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #b8ff87;
+    }
+
+    .frame-header-left span:first-child {
+      font-weight: bold;
+    }
+
+    .frame-header-right {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .status-led {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #a5ff6a 0%, #4a7b36 70%, #122109 100%);
+      box-shadow: 0 0 6px #a5ff6a;
+    }
+
+    #terminal-inner {
+      padding: 18px 22px 22px 22px;
+      border-top: 1px solid #304430;
+      border-left: 1px solid #263826;
+      border-right: 1px solid #263826;
+      background: radial-gradient(circle at top left, #101810 0%, #030403 70%);
+      min-height: 260px;
+    }
+
+    .stamp {
+      position: absolute;
+      right: 22px;
+      top: 46px;
+      border: 1px solid #9fef00;
+      padding: 6px 12px 4px;
+      font-size: 0.72rem;
+      transform: rotate(-6deg);
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      opacity: 0.7;
+      color: #c4ff9a;
+      background: rgba(0, 0, 0, 0.85);
+      box-shadow: 0 0 12px rgba(159, 239, 0, 0.35);
+    }
+
+    .stamp::before {
+      content: "ДЕПАРТАМЕНТО МУНИТОРУМ";
+      display: block;
+      font-size: 0.6rem;
+      letter-spacing: 0.16em;
+      opacity: 0.8;
+      margin-bottom: 2px;
+    }
+
+    #output {
+      white-space: pre-wrap;
+      font-size: 0.92rem;
+      line-height: 1.35;
+      color: #9fef00;
+      text-shadow: 0 0 3px rgba(159, 239, 0, 0.6);
+      min-height: 220px;
+    }
+
+    .caret {
+      display: inline-block;
+      width: 10px;
+      height: 1.05em;
+      background: #9fef00;
+      margin-left: 2px;
+      transform: translateY(2px);
+      box-shadow: 0 0 6px #9fef00;
+      animation: blink 1s steps(1, end) infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    #controls {
+      padding: 10px 22px 22px 22px;
+      border-top: 1px solid #1a2b1a;
+      background: #040604;
+      display: none;
+    }
+
+    .button {
+      margin-top: 8px;
+      padding: 10px 24px;
+      border: 1px solid #9fef00;
+      background: transparent;
+      color: #9fef00;
+      font-family: inherit;
+      font-size: 0.85rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      text-decoration: none;
+      display: inline-block;
+      text-shadow: 0 0 4px rgba(159, 239, 0, 0.8);
+    }
+
+    .button::before {
+      content: "";
+      position: absolute;
+      left: -120%;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        120deg,
+        transparent,
+        rgba(159, 239, 0, 0.7),
+        transparent
+      );
+      transform: skewX(-20deg);
+    }
+
+    .button:hover::before {
+      animation: glint 0.5s;
+    }
+
+    .button:hover {
+      box-shadow: 0 0 12px rgba(159, 239, 0, 0.7);
+      background: rgba(12, 24, 12, 0.9);
+    }
+
+    @keyframes glint {
+      to { left: 130%; }
+    }
+
+    .button:disabled {
+      opacity: 0.3;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    .hint {
+      font-size: 0.68rem;
+      color: #6bbf4a;
+      opacity: 0.9;
+      margin-top: 4px;
+    }
+
+    /* Адаптация для маленьких экранов */
+    @media (max-width: 768px) {
+      .hud-frame {
+        padding: 18px 10px;
+      }
+      #terminal-frame {
+        transform: scale(0.9);
+        transform-origin: center;
+      }
+      .hud-side-mark {
+        display: none;
+      }
+      .hud-corner {
+        width: 24px;
+        height: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="vignette"></div>
+  <div class="scanline"></div>
+
+  <!-- Боковые HUD-отметки -->
+  <div class="hud-side-mark left">
+    <div>КРЕСТ</div>
+    <div class="hud-side-tick"></div>
+    <div>МУНИТОРУМ</div>
+  </div>
+  <div class="hud-side-mark right">
+    <div>СЕТЬ</div>
+    <div class="hud-side-tick"></div>
+    <div>КРИГ</div>
+  </div>
+
+  <!-- Угловые рамки -->
+  <div class="hud-corner tl"></div>
+  <div class="hud-corner tr"></div>
+  <div class="hud-corner bl"></div>
+  <div class="hud-corner br"></div>
+
+  <div class="hud-frame">
+    <!-- ВЕРХНЯЯ HUD-ПАНЕЛЬ -->
+    <div class="hud-top">
+      <div class="hud-top-left">
+        <span>SEGMENTUM OBSCURUS</span>
+        <span style="margin-left:14px;">ТЕРМИНАЛ № 761255698-Γ</span>
+      </div>
+      <div class="hud-top-right">
+        <span class="hud-small-label">ДОСТУП: ОГРАНИЧЕННО</span>
+        <span class="hud-small-label">ЛИНИЯ: ВОЕННЫЙ КАНАЛ</span>
+        <div class="hud-led"></div>
+      </div>
+    </div>
+
+    <!-- ЦЕНТРАЛЬНОЕ ОКНО-ТЕРМИНАЛ -->
+    <div id="terminal-frame">
+      <div class="frame-header">
+        <div class="frame-header-left">
+          <span>ДЕПАРТАМЕНТО МУНИТОРУМ</span>
+          <span style="margin-left:12px;">ТЕРМИНАЛ № 761255698-Γ</span>
+        </div>
+        <div class="frame-header-right">
+          <span>СТАТУС: ОНЛАЙН</span>
+          <div class="status-led"></div>
+        </div>
+      </div>
+
+      <div class="stamp">
+        КОНФИДЕНЦИАЛЬНО
+      </div>
+
+      <div id="terminal-inner">
+        <div id="output"></div>
+        <span class="caret" id="caret"></span>
+      </div>
+
+      <div id="controls">
+        <!-- КНОПКА БЕЗ РЕАЛЬНОГО СКАЧИВАНИЯ -->
+        <button type="button" class="button" id="accessBtn">
+          ОТКРЫТЬ ЛИЧНОЕ ДЕЛО
+        </button>
+        <div class="hint">
+          ПРИМЕЧАНИЕ: ОПЕРАЦИЯ БУДЕТ ЗАНЕСЕНА В ЖУРНАЛ ДЕПАРТАМЕНТО МУНИТОРУМ.
+        </div>
+      </div>
+    </div>
+
+    <!-- НИЖНЯЯ HUD-ПАНЕЛЬ -->
+    <div class="hud-bottom">
+      <span>ЛОГ: ОТКРЫТИЕ ЛИЧНОГО ДЕЛА</span>
+      <div class="hud-progress-bar"></div>
+      <span>МОНИТОРИНГ: АКТИВЕН</span>
+    </div>
+  </div>
+
+  <script>
+    // Основной текст терминала (в начале)
+    const lines = [
+      "> ИНИЦИАЛИЗАЦИЯ ТЕРМИНАЛА ДЕПАРТАМЕНТО МУНИТОРУМ...",
+      "> ПРОВЕРКА ЦЕЛОСТНОСТИ СВЯЗИ С СЕТЬЮ СЕГМЕНТУМА ОБСКУРУС...",
+      "> СОСТОЯНИЕ СЕТИ: ДОПУСТИМО.",
+      "> ",
+      "> ПРОВЕРКА УДОСТОВЕРЕНИЯ ПОЛЬЗОВАТЕЛЯ...",
+      "> ПОЛЬЗОВАТЕЛЬ: ####, ########, ###, ###############.",
+      "> УРОВЕНЬ ДОПУСКА: ОГРАНИЧЕННО // КОНФИДЕНЦИАЛЬНО.",
+      "> СТАТУС АУТЕНТИФИКАЦИИ: ПОДТВЕРЖДЕНО ПЕЧАТЬЮ МУНИТОРУМ.",
+      "> ",
+      "> ЗАПРОС ДОСТУПА К ЛИЧНОМУ ДЕЛУ: [7TH FAH O-EFR 8787] ...",
+      "> ПРОВЕРКА ПЕЧАТЕЙ ОФФИЦИО ПРЕФЕКТУС...",
+      "> ПЕЧАТИ: ПОДТВЕРЖДЕНЫ.",
+      "> СТАТУС ФАЙЛА: ДОСТУП РАЗРЕШЁН.",
+      "> ",
+      "> ФАЙЛ: «ЛИЧНОЕ ДЕЛО» ГОТОВ К ВЫГРУЗКЕ НА ЛОКАЛЬНЫЙ НОСИТЕЛЬ.",
+      "> ДЛЯ СКАЧИВАНИЯ ВВЕДИТЕ СООТВЕТСТВУЮЩУЮ КОМАНДУ."
+    ];
+
+
+    const outputEl = document.getElementById("output");
+    const controlsEl = document.getElementById("controls");
+    const caretEl = document.getElementById("caret");
+    const accessBtn = document.getElementById("accessBtn");
+
+    let lineIndex = 0;
+    let charIndex = 0;
+    const baseSpeed = 2; // базовая скорость печати (мс)
+
+    function type() {
+      if (lineIndex >= lines.length) {
+        caretEl.style.display = "inline-block";
+        controlsEl.style.display = "block";
+        return;
+      }
+
+      caretEl.style.display = "none";
+
+      const currentLine = lines[lineIndex];
+      const visible = currentLine.slice(0, charIndex + 1);
+      const previous = lines.slice(0, lineIndex).join("\n");
+
+      outputEl.textContent = previous + (previous ? "\n" : "") + visible;
+      charIndex++;
+
+      if (charIndex < currentLine.length) {
+        const jitter = Math.random() * 40;
+        setTimeout(type, baseSpeed + jitter);
+      } else {
+        lineIndex++;
+        charIndex = 0;
+        caretEl.style.display = "inline-block";
+        setTimeout(type, 280);
+      }
+    }
+
+    window.addEventListener("load", () => {
+      setTimeout(type, 500);
+    });
+
+   // Настройки длительности этапов
+    const stageVisibleTime = 2000; // сколько ОТБРАЖАЕТСЯ текст (мс)
+    const stageGapTime     = 400;  // пауза между исчезновением и следующим этапом (мс)
+
+    // АНИМАЦИЯ ПОСЛЕ НАЖАТИЯ КНОПКИ (БЕЗ РЕАЛЬНОГО СКАЧИВАНИЯ)
+    function playTransferAnimation() {
+        controlsEl.style.display = "none";
+        caretEl.style.display = "none";
+
+        const stages = [
+        "> ЗАГРУЗКА НА ЛИЧНЫЙ НОСИТЕЛЬ...",
+        "> ПЕЧАТЬ..."
+        ];
+
+        let stageIndex = 0;
+
+        function showStage() {
+        if (stageIndex >= stages.length) {
+            return;
+        }
+
+        outputEl.textContent = stages[stageIndex];
+        stageIndex++;
+
+        // держим текст подольше
+        setTimeout(() => {
+            outputEl.textContent = "";
+            if (stageIndex < stages.length) {
+            setTimeout(showStage, stageGapTime);
+            }
+        }, stageVisibleTime);
+        }
+
+        showStage();
+    }
+
+    accessBtn.addEventListener("click", function () {
+        accessBtn.disabled = true;
+        playTransferAnimation();
+
+        // Увеличиваем задержку, чтобы дождаться обоих этапов
+        setTimeout(function () {
+        // ЗАМЕНИ "main.html" НА НУЖНУЮ СТРАНИЦУ
+        window.location.href = "main.html";
+        }, stageVisibleTime * 2 + stageGapTime + 200);
+    });
+    </script>
+</body>
+</html>
