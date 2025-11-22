@@ -453,6 +453,26 @@
         display: none;
       }
     }
+
+    /* Блок с подписью офицера */
+    .signature-block {
+    margin-top: -60px;
+    text-align: right;
+    padding-right: 40px; /* чтобы не уезжало под уголок страницы */
+    }
+
+    .signature-label {
+    font-family: "Special Elite", "Courier New", monospace;
+    font-size: 0.8rem;
+    margin-bottom: 2px;
+    }
+
+    .signature-image {
+    height: 60px;        /* подбери под свою картинку */
+    opacity: 0.9;
+    filter: grayscale(0.1);
+    }
+
   </style>
 </head>
 <body>
@@ -508,11 +528,19 @@
 <span class="field-line" style="min-width:300px;"></span>
 
 <!-- Документ составлен квартирмейстером: <span class="field-line" style="min-width:180px;"></span> -->
-Подпись офицера, утвердившего личное дело: []
+Текущий статус: АКТИВЕН
 <span class="field-line" style="min-width:260px;"></span>
 
-Дата утверждения:
-<span class="field-line" style="min-width:130px;"></span>
+          </div>
+
+          <!-- Блок с подписью офицера под первой страницей -->
+          <div class="signature-block">
+            <div class="signature-label">Подпись офицера, утвердившего личное дело:</div>
+            <img src="signature.png" alt="Подпись офицера" class="signature-image">
+            <div class="signature-label">Дата утверждения: 21.11.М41</div>
+          </div>
+
+          <div class="barcode">
 
           </div>
 
