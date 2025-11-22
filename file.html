@@ -456,7 +456,7 @@
 
     /* Блок с подписью офицера */
     .signature-block {
-    margin-top: -100px;
+    margin-top: 10px;
     text-align: right;
     padding-right: 40px; /* чтобы не уезжало под уголок страницы */
     }
@@ -471,6 +471,52 @@
     height: 60px;        /* подбери под свою картинку */
     opacity: 0.9;
     filter: grayscale(0.1);
+    }
+
+    /* Контейнер анкеты с фото */
+.anketa-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 22px;
+}
+
+    /* Блок с фотографией */
+    .anketa-photo {
+    width: 220px;
+    min-width: 220px;
+    background: #ebe4d4;
+    border: 2px solid rgba(50,40,30,0.45);
+    box-shadow:
+        0 2px 6px rgba(0,0,0,0.35),
+        inset 0 0 13px rgba(0,0,0,0.08);
+    padding: 6px;
+    border-radius: 2px;
+    position: relative;
+    }
+
+    /* Картинка персонажа */
+    .anketa-photo img {
+    width: 100%;
+    display: block;
+    filter: sepia(0.25) contrast(1.05);
+    }
+
+    /* Имитация скрепки */
+    .anketa-photo::before {
+    content: "";
+    position: absolute;
+    top: -8px;
+    left: 12px;
+    width: 42px;
+    height: 42px;
+    background: url("paperclip.png") no-repeat center/contain;
+    opacity: 0.85;
+    transform: rotate(-7deg);
+    }
+
+    .anketa-flex .typewriter {
+    flex: 1; /* текст тянется, фото фиксированное справа */
     }
 
   </style>
@@ -517,9 +563,10 @@
             <div class="section-title">Профиль</div>
             <div class="section-meta">Форма 17-А · Первичное заполнение</div>
           </div>
-          <div class="section-divider-line"></div>
+<div class="section-divider-line"></div>
 
-          <div class="typewriter">
+<div class="anketa-flex">
+  <div class="typewriter">
 Номер/имя: 8787<span class="field-line"></span>
 Звание: Обер-Ефрейтор<span class="field-line"></span>
 Должность: Квартирмейстер | Знаменосец<span class="field-line"></span>
@@ -527,11 +574,20 @@
 Место рождения: Мир-Смерти Криг<span class="field-line"></span>
 <span class="field-line" style="min-width:300px;"></span>
 
-<!-- Документ составлен квартирмейстером: <span class="field-line" style="min-width:180px;"></span> -->
 Текущий статус: АКТИВЕН
 <span class="field-line" style="min-width:260px;"></span>
+  </div>
 
-          </div>
+  <div class="anketa-photo">
+    <img src="8787-photo.jpg" alt="Фотография военнослужащего 8787">
+    <div style="font-size:0.7rem; text-align:center; opacity:0.8;">
+    Фотопортрет, приложенный к делу
+    </div>
+  </div>
+  
+</div>
+
+
 
           <!-- Блок с подписью офицера под первой страницей -->
           <div class="signature-block">
@@ -557,7 +613,7 @@
               <span style="--h:0.9"></span>
               <span style="--h:0.4"></span>
             </div>
-            <div class="barcode-text">7TH-FAH-O-EFR-8787</div>
+            <!-- <div class="barcode-text">7TH-FAH-O-EFR-8787</div> -->
           </div>
         </div>
 
