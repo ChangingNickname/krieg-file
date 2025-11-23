@@ -519,12 +519,94 @@
     flex: 1; /* текст тянется, фото фиксированное справа */
     }
 
+    /* ===== Стартовый экран ===== */
+    .start-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10; /* поверх папки */
+      background: radial-gradient(circle at top, #191511 0%, #050403 60%, #000 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: "Special Elite", "Courier New", monospace;
+      color: #f6f0e4;
+    }
+
+    .start-overlay-inner {
+      border: 2px solid rgba(200,190,150,0.6);
+      padding: 28px 36px;
+      max-width: 520px;
+      text-align: center;
+      background: rgba(20,16,12,0.94);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.8);
+    }
+
+    .start-title {
+      font-size: 0.95rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .start-text {
+      font-size: 0.9rem;
+      line-height: 1.4;
+      margin-bottom: 18px;
+      opacity: 0.9;
+    }
+
+    .start-hint {
+      font-size: 0.75rem;
+      opacity: 0.75;
+      margin-bottom: 18px;
+    }
+
+    .start-button {
+      padding: 8px 24px;
+      font-family: "Special Elite", "Courier New", monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      border: 1px solid rgba(220,210,170,0.7);
+      background: #3b3126;
+      color: #f6f0e4;
+      cursor: pointer;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.6);
+    }
+
+    .start-button:hover {
+      background: #4a3d2f;
+    }
+
+    /* плавное скрытие */
+    .start-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease-out;
+    }
+
+
   </style>
 </head>
 <body>
     <audio id="soundType" src="typesound.mp3" preload="auto"></audio>
     <audio id="soundPaper" src="papersound.mp3" preload="auto"></audio>
     <audio id="soundButton" src="papersound.mp3" preload="auto"></audio>
+  <div id="startOverlay" class="start-overlay">
+    <div class="start-overlay-inner">
+      <div class="start-title">ЛИЧНОЕ ДЕЛО · ПОДТВЕРЖДЕНИЕ</div>
+      <div class="start-text">
+        Для запуска печати документа и активации звука<br>
+        нажмите любую клавишу или кнопку мыши.
+      </div>
+      <div class="start-hint">
+        Рекомендация: использовать наушники или умеренную громкость.
+      </div>
+      <button id="startButton" class="start-button">
+        НАЧАТЬ ПЕЧАТЬ
+      </button>
+    </div>
+  </div>
 
   <div class="spine"></div>
 
@@ -788,7 +870,7 @@
 
 С первого же дня учебной роты при призывном пункте №17 инструкторы отмечали у 8787 более быстрое формирование логических связей и повышенную скорость обработки информации.
 
-Именно благодаря этому в юном возрасте он был временно прикреплён к складскому отсеку, где впервые столкнулся с дисциплиной Муниторумского учёта, что затем дисциплинировало его к отчетности.
+Именно благодаря этому в юном возрасте он был временно прикрепл ён к складскому отсеку, где впервые столкнулся с дисциплиной Муниторумского учёта, что затем дисциплинировало его к отчетности.
 
 До призыва в шутце, 8787 прошёл стандартный цикл подземных работ: расчистку завалов, перенос снаряжения, сопровождение ремонтных бригад и участие в укреплении траншейных линий нижних уровней Улья В-27. В боевой подготовке был оценён как дисциплинированный, исполнительный, не склонный к импровизации — но при этом способен к быстрым реакциям в стрессовых ситуациях.
 
@@ -830,9 +912,6 @@
 
     // глобальный флаг "можно ли вообще играть звук" (см. ниже)
     let soundEnabled = false;
-    window.addEventListener("click", () => {
-        soundEnabled = true;
-        }, { once: true });
 
     function playSound(audio, volume = 0.12) {
     if (!soundEnabled) return; // пока браузер не дал добро — тишина
@@ -850,7 +929,11 @@
     const pageNext = document.getElementById("pageNext");
     const pageIndicator = document.getElementById("pageIndicator");
 
-    const typeSpeed = 10;     // скорость печати
+    // первая активная секция (Профиль)
+    let firstSection = document.querySelector(".section-content.active");
+
+
+    const typeSpeed = 2;     // скорость печати
     const typeJitter = 25;    // небольшой рандом
     const pageSize = 700;     // целевой размер "страницы" в символах
 
@@ -867,6 +950,22 @@
 
     // section -> Map(pageIndex -> maxCharsTyped)
     const progressPages = new WeakMap();
+
+    function beginExperience() {
+      if (soundEnabled) return; // уже запущено
+
+      soundEnabled = true;
+
+      const overlay = document.getElementById("startOverlay");
+      if (overlay) {
+          overlay.classList.add("hidden");
+      }
+
+      // запускаем печать первой секции только после подтверждения
+      if (firstSection) {
+          updatePageUI(firstSection);
+      }
+  }
 
     function getSeenSet(section) {
         let set = seenPages.get(section);
@@ -1031,7 +1130,7 @@
         const ch = currentPageText[currentCharIndex - 1];
 
         // играем звук только иногда и только для "осмысленных" символов
-        if (ch && ch !== ' ' && ch !== '\n' && currentCharIndex % 3 === 0) {
+        if (ch && ch !== ' ' && ch !== '\n' && currentCharIndex % 4 === 0) {
         playSound(soundType, 0.06); // очень тихий стук клавиши
         }
 
@@ -1206,12 +1305,32 @@
     });
 
     // Старт: активная секция
-    window.addEventListener("load", () => {
-        const firstActive = document.querySelector(".section-content.active");
-        if (firstActive) {
-        updatePageUI(firstActive);
-        }
+    // Инициализация: собираем страницы для всех секций
+    sections.forEach(sec => {
+        buildPagesForSection(sec);
     });
+
+    // Стартовая логика: ждём подтверждение пользователя
+    window.addEventListener("load", () => {
+        const btn = document.getElementById("startButton");
+
+        if (btn) {
+            btn.addEventListener("click", (e) => {
+                e.stopPropagation(); // чтобы клик по кнопке не сработал дважды
+                beginExperience();
+            });
+        }
+
+        // Любой клик по странице или клавиша — тоже запуск
+        window.addEventListener("click", () => {
+            beginExperience();
+        });
+
+        window.addEventListener("keydown", () => {
+            beginExperience();
+        });
+    });
+
     </script>
 
 
